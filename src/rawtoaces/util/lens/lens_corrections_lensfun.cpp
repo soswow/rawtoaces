@@ -57,10 +57,22 @@ const lfModifier *modifierFromSpec(
 
     const lfCamera **cameras =
         Database->FindCamerasExt( camera_make.c_str(), camera_model.c_str() );
+
+    if (cameras == nullptr || cameras[0] == nullptr) {
+        std::cerr << "Camera not found in lensfun database: " << camera_make << " " << camera_model << std::endl;
+        return nullptr;
+    }
+
     auto cam = cameras[0];
 
     const lfLens **lenses =
         Database->FindLenses( cam, NULL, lens_model.c_str() );
+
+    if (lenses == nullptr || lenses[0] == nullptr) {
+        std::cerr << "Lens not found in lensfun database: " << lens_make << " " << lens_model << std::endl;
+        return nullptr;
+    }
+
     auto lens = lenses[0];
 
 #if ( LF_VERSION <= ( 0 << 24 ) | ( 3 << 16 ) | ( 4 << 8 ) )

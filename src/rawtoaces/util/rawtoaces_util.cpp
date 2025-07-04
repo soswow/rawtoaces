@@ -1010,9 +1010,26 @@ bool ImageConverter::apply_lens_corrections(
     if ( do_aberration || do_distortion || do_vignetting )
     {
         lens_corrections_cache.verbosity = verbosity;
-
+        
+        if (verbosity > 0) {
+            std::cerr << "Image spec contents:" << std::endl;
+            for (size_t i = 0; i < src.spec().extra_attribs.size(); ++i) {
+                const auto &attrib = src.spec().extra_attribs[i];
+                std::cerr << "  " << attrib.name() << ": ";
+                if (attrib.type().basetype == OIIO::TypeDesc::STRING)
+                    std::cerr << "\'" << *(const char **)attrib.data() << "\'";
+                else if (attrib.type().basetype == OIIO::TypeDesc::FLOAT) 
+                    std::cerr << *(const float *)attrib.data();
+                std::cerr << std::endl;
+            }
+            std::cerr << std::endl;
+        }
         std::string camera_make    = src.spec()["cameraMake"];
+        if (camera_make.empty())
+            camera_make = src.spec()["Make"];
         std::string camera_model   = src.spec()["cameraModel"];
+        if (camera_model.empty())
+            camera_model = src.spec()["Model"];
         float       aperture       = custom_aperture;
         float       focus_distance = custom_focus_distance;
 
@@ -1023,6 +1040,8 @@ bool ImageConverter::apply_lens_corrections(
         std::string lens_model = custom_lens_model;
         if ( lens_model.empty() )
             lens_model = src.spec()["lensModel"];
+        if (lens_model.empty())
+            lens_model = src.spec()["Exif:LensModel"];
         if ( lens_model.empty() )
         {
             std::cerr << "Failed to find the lens model in the file metadata. "
@@ -1035,6 +1054,8 @@ bool ImageConverter::apply_lens_corrections(
         if ( focal_length == 0.0f )
             focal_length = src.spec().get_float_attribute( "focalLength" );
         if ( focal_length == 0.0f )
+            focal_length = src.spec().get_float_attribute( "Exif:FocalLength" );
+        if ( focal_length == 0.0f )
         {
             std::cerr << "Failed to find the lens focal length in the file "
                       << "metadata. You can provide focal length using the "
@@ -1046,6 +1067,8 @@ bool ImageConverter::apply_lens_corrections(
         {
             if ( aperture == 0.0f )
                 aperture = src.spec().get_float_attribute( "aperture" );
+            if ( aperture == 0.0f )
+                aperture = src.spec().get_float_attribute( "Exif:ApertureValue" ); // or FNumber
             if ( aperture == 0.0f )
             {
                 std::cerr << "Failed to find the lens aperture in the file "
