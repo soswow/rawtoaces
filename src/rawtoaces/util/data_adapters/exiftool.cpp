@@ -136,7 +136,7 @@ bool fetch_metadata(
                              { "FocalLength", { "focalLength", true } } };
 
 //    std::string exiftool_path = env;
-
+    
     std::string command = exiftool_path + " -S ";
     for ( auto key: keys )
     {
@@ -158,6 +158,7 @@ bool fetch_metadata(
     
     
     std::stringstream stream2;
+    std::cerr << "Exiftool: executing command: " << command << std::endl;
     execute(command, stream2);
     
 //    command = "exec bash -c 'which exiftool'";
@@ -194,7 +195,15 @@ bool fetch_metadata(
             std::string exiftool_key = line.substr( 0, pos );
             std::string value        = line.substr( pos + 2 );
 
-            auto              &map      = exiftool_to_oiio.at( exiftool_key );
+            // Check if the key exists in our mapping before using .at()
+            auto it = exiftool_to_oiio.find( exiftool_key );
+            if ( it == exiftool_to_oiio.end() )
+            {
+                // Skip unknown keys silently
+                continue;
+            }
+
+            auto              &map      = it->second;
             const std::string &oiio_key = std::get<0>( map );
             bool               to_float = std::get<1>( map );
 
