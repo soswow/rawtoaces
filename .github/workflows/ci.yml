@@ -150,7 +150,7 @@ jobs:
         # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
         run: >
           cmake -B build -S .
-          -D CMAKE_INSTALL_PREFIX=/install
+          -D CMAKE_INSTALL_PREFIX=/install_dir
 
       - name: Build
         run: |
@@ -166,7 +166,7 @@ jobs:
           cmake
           -B build_config_test
           -S ./unittest/config_tests
-          -D RAWTOACES_DIR=/install/lib/cmake/RAWTOACES
+          -D RAWTOACES_DIR=/install_dir/lib/cmake/RAWTOACES
 
       - name: Build config_tests
         run: >
@@ -242,9 +242,9 @@ jobs:
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
       run: >
         cmake
-        -B /build
+        -B build_dir
         -S ${{ github.workspace }}
-        -D CMAKE_INSTALL_PREFIX=/install
+        -D CMAKE_INSTALL_PREFIX=/install_dir
         -D CXX_STANDARD=C++17
         -D CMAKE_TOOLCHAIN_FILE="${{ matrix.toolchain_file }}"
         -D ENABLE_SHARED="${{ matrix.build_shared_libs }}"
@@ -252,11 +252,11 @@ jobs:
     - name: Build
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       run: |
-        cmake --build /build --config ${{ matrix.build_type }}
-        cmake --install /build
+        cmake --build build_dir --config ${{ matrix.build_type }}
+        cmake --install build_dir
 
     - name: Test
-      working-directory: /build
+      working-directory: build_dir
       # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ctest --build-config ${{ matrix.build_type }} --rerun-failed --output-on-failure
@@ -266,7 +266,7 @@ jobs:
         cmake
         -B /build_config_test
         -S ${{ github.workspace }}/unittest/config_tests
-        -D RAWTOACES_DIR=/install/lib/cmake/RAWTOACES
+        -D RAWTOACES_DIR=/install_dir/lib/cmake/RAWTOACES
         -D CMAKE_TOOLCHAIN_FILE="${{ matrix.toolchain_file }}"
 
     - name: Build config_tests
