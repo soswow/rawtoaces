@@ -66,20 +66,20 @@ jobs:
             sudo yum install --setopt=tsflags=nodocs -y eigen3-devel ceres-solver-devel LibRaw-devel
 
       - name: Configure CMake
-        # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
+        # Configure CMake in a 'build_dir' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
         # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
         run: >
           cmake 
-          -B build 
+          -B build_dir 
           -S . 
           -D RTA_CENTOS7_CERES_HACK=ON
 
       - name: Build
         run: |
-          sudo cmake --build build
+          sudo cmake --build build_dir
 
       - name: Test
-        working-directory: build
+        working-directory: build_dir
         run: ctest --rerun-failed --output-on-failure
 
   aswf:
@@ -146,19 +146,19 @@ jobs:
             sudo yum install --setopt=tsflags=nodocs -y eigen3-devel ceres-solver-devel LibRaw-devel
 
       - name: Configure CMake
-        # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
+        # Configure CMake in a 'build_dir' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
         # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
         run: >
-          cmake -B build -S .
-          -D CMAKE_INSTALL_PREFIX=/install_dir
+          cmake -B build_dir -S .
+          -D CMAKE_INSTALL_PREFIX=install_dir
 
       - name: Build
         run: |
-          sudo cmake --build build
-          sudo cmake --install build
+          sudo cmake --build build_dir
+          sudo cmake --install build_dir
 
       - name: Test
-        working-directory: build
+        working-directory: build_dir
         run: ctest --rerun-failed --output-on-failure
         
       - name: Configure config_tests
@@ -166,7 +166,7 @@ jobs:
           cmake
           -B build_config_test
           -S ./unittest/config_tests
-          -D RAWTOACES_DIR=/install_dir/lib/cmake/RAWTOACES
+          -D RAWTOACES_DIR=install_dir/lib/cmake/RAWTOACES
 
       - name: Build config_tests
         run: >
@@ -238,13 +238,13 @@ jobs:
         build_scripts/${{ matrix.install_deps }}.bash
 
     - name: Configure CMake
-      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
+      # Configure CMake in a 'build_dir' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
       run: >
         cmake
         -B build_dir
         -S ${{ github.workspace }}
-        -D CMAKE_INSTALL_PREFIX=/install_dir
+        -D CMAKE_INSTALL_PREFIX=install_dir
         -D CXX_STANDARD=C++17
         -D CMAKE_TOOLCHAIN_FILE="${{ matrix.toolchain_file }}"
         -D ENABLE_SHARED="${{ matrix.build_shared_libs }}"
@@ -266,7 +266,7 @@ jobs:
         cmake
         -B /build_config_test
         -S ${{ github.workspace }}/unittest/config_tests
-        -D RAWTOACES_DIR=/install_dir/lib/cmake/RAWTOACES
+        -D RAWTOACES_DIR=install_dir/lib/cmake/RAWTOACES
         -D CMAKE_TOOLCHAIN_FILE="${{ matrix.toolchain_file }}"
 
     - name: Build config_tests
