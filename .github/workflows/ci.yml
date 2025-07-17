@@ -164,13 +164,13 @@ jobs:
       - name: Configure config_tests
         run: >
           cmake
-          -B build_config_test
+          -B build_config_test_dir
           -S ./unittest/config_tests
           -D RAWTOACES_DIR=install_dir/lib/cmake/RAWTOACES
 
       - name: Build config_tests
         run: >
-          cmake --build build_config_test --config Release
+          cmake --build build_config_test_dir --config Release
         
       - name: Test config_tests
         run: >
@@ -178,7 +178,7 @@ jobs:
           --build-config Release
           --rerun-failed 
           --output-on-failure 
-          --test-dir build_config_test
+          --test-dir build_config_test_dir
 
 ##################################
 
@@ -264,14 +264,14 @@ jobs:
     - name: Configure config_tests
       run: >
         cmake
-        -B /build_config_test
+        -B build_config_test_dir
         -S ${{ github.workspace }}/unittest/config_tests
         -D RAWTOACES_DIR=install_dir/lib/cmake/RAWTOACES
         -D CMAKE_TOOLCHAIN_FILE="${{ matrix.toolchain_file }}"
 
     - name: Build config_tests
       run: >
-        cmake --build /build_config_test --config ${{ matrix.build_type }}
+        cmake --build build_config_test_dir --config ${{ matrix.build_type }}
         
     - name: Test config_tests
       run: >
@@ -279,4 +279,4 @@ jobs:
         --build-config ${{ matrix.build_type }} 
         --rerun-failed 
         --output-on-failure 
-        --test-dir /build_config_test
+        --test-dir build_config_test_dir
