@@ -16,7 +16,7 @@ target_link_libraries(
         Boost::unit_test_framework
 )
 
-add_test ( NAME Test_Spst COMMAND Test_Spst )
+add_test ( NAME Test_Spst COMMAND Test_Spst WORKING_DIRECTORY ${CMAKE_SOURCE_DIR} )
 
 ################################################################################
 
@@ -32,7 +32,7 @@ target_link_libraries(
         Boost::unit_test_framework
 )
 
-add_test ( NAME Test_IDT COMMAND Test_IDT )
+add_test ( NAME Test_IDT COMMAND Test_IDT WORKING_DIRECTORY ${CMAKE_SOURCE_DIR} )
 
 ################################################################################
 
@@ -48,7 +48,7 @@ target_link_libraries(
         Boost::unit_test_framework
 )
 
-add_test ( NAME Test_Illum COMMAND Test_Illum )
+add_test ( NAME Test_Illum COMMAND Test_Illum WORKING_DIRECTORY ${CMAKE_SOURCE_DIR} )
 
 ################################################################################
 
@@ -64,7 +64,7 @@ target_link_libraries(
         Boost::unit_test_framework
 )
 
-add_test ( NAME Test_DNGIdt COMMAND Test_DNGIdt )
+add_test ( NAME Test_DNGIdt COMMAND Test_DNGIdt WORKING_DIRECTORY ${CMAKE_SOURCE_DIR} )
 
 ################################################################################
 
@@ -80,7 +80,7 @@ target_link_libraries(
         Boost::unit_test_framework
 )
 
-add_test ( NAME Test_Math  COMMAND Test_Math )
+add_test ( NAME Test_Math  COMMAND Test_Math WORKING_DIRECTORY ${CMAKE_SOURCE_DIR} )
 
 ################################################################################
 
@@ -96,7 +96,7 @@ target_link_libraries(
         Boost::unit_test_framework
 )
 
-add_test ( NAME Test_Logic COMMAND Test_Logic )
+add_test ( NAME Test_Logic COMMAND Test_Logic WORKING_DIRECTORY ${CMAKE_SOURCE_DIR} )
 
 ################################################################################
 
@@ -112,4 +112,4 @@ target_link_libraries(
         Boost::unit_test_framework
 )
 
-add_test ( NAME Test_Misc COMMAND Test_Misc )
+add_test ( NAME Test_Misc COMMAND Test_Misc WORKING_DIRECTORY ${CMAKE_SOURCE_DIR} )

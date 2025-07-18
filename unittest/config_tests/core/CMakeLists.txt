@@ -17,4 +17,4 @@ target_link_libraries(
         Boost::unit_test_framework
 )
 
-add_test ( NAME test_core COMMAND test_core )
+add_test ( NAME test_core COMMAND test_core WORKING_DIRECTORY ${CMAKE_SOURCE_DIR} )
