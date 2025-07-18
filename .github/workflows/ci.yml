@@ -89,8 +89,9 @@ jobs:
           ls -l ${{ github.workspace }}
 
       - name: Test
-        working-directory: ${{ env.BUILD_DIR }}
-        run: ctest --rerun-failed --output-on-failure
+        run: |
+          cd ${{ env.BUILD_DIR }}
+          ctest --rerun-failed --output-on-failure
 
   aswf:
     name: "VFX${{matrix.vfxyear}} ${{matrix.desc}}"
@@ -177,8 +178,9 @@ jobs:
           ls -l ${{ github.workspace }}
 
       - name: Test
-        working-directory: ${{ env.BUILD_DIR }}
-        run: ctest --rerun-failed --output-on-failure
+        run: |
+          cd ${{ env.BUILD_DIR }}
+          ctest --rerun-failed --output-on-failure
         
       - name: Configure config_tests
         run: >
@@ -285,10 +287,11 @@ jobs:
           ls -l ${{ github.workspace }}
 
       - name: Test
-        working-directory: ${{ env.BUILD_DIR }}
         # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
         # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-        run: ctest --build-config ${{ matrix.build_type }} --rerun-failed --output-on-failure
+        run: |
+          cd ${{ env.BUILD_DIR }}
+          ctest --build-config ${{ matrix.build_type }} --rerun-failed --output-on-failure
 
       - name: Configure config_tests
         run: >
