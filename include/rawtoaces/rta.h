@@ -101,7 +101,7 @@ public:
 
     const char          *getBrand() const;
     const char          *getModel() const;
-    const uint8_t        getWLIncrement() const;
+    int                  getWLIncrement() const;
     const vector<RGBSen> getSensitivity() const;
 
     char *getBrand();

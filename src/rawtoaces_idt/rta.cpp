@@ -463,10 +463,10 @@ const char *Spst::getModel() const
 //      N/A
 //
 //	outputs:
-//		const uint8_t: Wavelength increment value (e.g., 5nm, 10nm) of
+//		int: Wavelength increment value (e.g., 5nm, 10nm) of
 //                     the camera sensitivity
 
-const uint8_t Spst::getWLIncrement() const
+int Spst::getWLIncrement() const
 {
     return _increment;
 }
@@ -520,7 +520,7 @@ char *Spst::getModel()
 //      N/A
 //
 //	outputs:
-//	    uint8_t: Wavelength increment value (e.g., 5nm, 10nm) of the
+//	    int: Wavelength increment value (e.g., 5nm, 10nm) of the
 //               camera's sensitivity
 
 int Spst::getWLIncrement()
