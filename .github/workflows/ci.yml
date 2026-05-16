@@ -19,7 +19,7 @@ jobs:
       container: ${{ matrix.container }}
       container_volumes: ${{ matrix.container_volumes || '[]' }}
       cc_compiler: ${{ matrix.compiler[0] }}
-      cxx_compiler: ${{ matrix.cxx_compiler[1] }}
+      cxx_compiler: ${{ matrix.compiler[1] }}
       cxx_standard: ${{ matrix.cxx_standard || 17 }}
       vfxyear: ${{ matrix.vfxyear || 0 }}
       install_deps: install_deps_yum
