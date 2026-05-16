@@ -114,8 +114,9 @@ jobs:
           conan install --requires=nlohmann_json/3.12.0 --generator CMakeDeps --generator CMakeToolchain --output-folder=build_deps --build=missing
           conan install --requires=nanobind/2.9.2 --generator CMakeDeps --generator CMakeToolchain --output-folder=build_deps --build=missing
           # ASWF /usr/local may not ship OpenImageIOConfig.cmake; pull OIIO via Conan so find_package(CONFIG) succeeds with the merged toolchain.
-          # libheif (default OIIO opt) needs C++20; conan profile detect uses gnu17 here—disable HEIF so the graph stays C++17-friendly for CI.
-          conan install --requires=openimageio/3.1.13.1 -o openimageio/*:with_libheif=False --generator CMakeDeps --generator CMakeToolchain --output-folder=build_deps --build=missing
+          # - libheif needs C++20 vs conan's gnu17 profile → disable HEIF.
+          # - default ffmpeg pulls vaapi/system which demands libva-devel while package_manager mode is "check" → disable ffmpeg for CI.
+          conan install --requires=openimageio/3.1.13.1 -o openimageio/*:with_libheif=False -o openimageio/*:with_ffmpeg=False --generator CMakeDeps --generator CMakeToolchain --output-folder=build_deps --build=missing
           python -m pip install pytest
           sudo yum install --setopt=tsflags=nodocs -y perl-Image-ExifTool
           # Base package carries XML DB paths used by tests; -devel alone may omit them on some images.
