@@ -145,7 +145,8 @@ jobs:
           # ASWF /usr/local may not ship OpenImageIOConfig.cmake; pull OIIO via Conan so find_package(CONFIG) succeeds with the merged toolchain.
           # - libheif needs C++20 vs conan's gnu17 profile → disable HEIF.
           # - default ffmpeg pulls vaapi/system which demands libva-devel while package_manager mode is "check" → disable ffmpeg for CI.
-          conan install --requires=openimageio/3.1.13.1 -s compiler.cppstd=gnu${{ inputs.cxx_standard }} -o openimageio/*:with_libheif=False -o openimageio/*:with_ffmpeg=False --generator CMakeDeps --generator CMakeToolchain --output-folder=build_deps --build=missing
+          # - raw tests need RAW formats in OIIO's extension_list → enable LibRaw (Conan default is off).
+          conan install --requires=openimageio/3.1.13.1 -s compiler.cppstd=gnu${{ inputs.cxx_standard }} -o openimageio/*:with_libheif=False -o openimageio/*:with_ffmpeg=False -o openimageio/*:with_raw=True --generator CMakeDeps --generator CMakeToolchain --output-folder=build_deps --build=missing
           sudo yum install --setopt=tsflags=nodocs -y perl-Image-ExifTool
           # Base package carries XML DB paths used by tests; -devel alone may omit them on some images.
           sudo yum install --setopt=tsflags=nodocs -y lensfun lensfun-devel
