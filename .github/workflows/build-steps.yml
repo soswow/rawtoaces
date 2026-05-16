@@ -121,9 +121,11 @@ jobs:
       - name: Configure CMake
         shell: bash
         run: |
-          # Conan toolchain limits prefix search to Conan deps; ASWF stacks ship OpenImageIO under /usr/local.
+          # Conan toolchain can narrow find_package() to Conan prefixes only; ASWF stacks ship OpenImageIO/Eigen/Ceres under /usr/local (ASWF_INSTALL_PREFIX).
+          CMAKE_EXTRA=()
           if [[ "${{ inputs.vfxyear }}" -gt 2022 ]]; then
             export CMAKE_PREFIX_PATH="/usr/local${CMAKE_PREFIX_PATH:+:${CMAKE_PREFIX_PATH}}"
+            CMAKE_EXTRA+=( -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH )
           fi
           cmake \
             -B build \
@@ -135,7 +137,8 @@ jobs:
             -D CMAKE_BUILD_TYPE="${{ inputs.build_type }}" \
             -D ENABLE_SHARED="${{ inputs.build_shared_libs }}" \
             -D RTA_ENABLE_LENSFUN="${{ inputs.enable_lensfun }}" \
-            -D RTA_SANITISER_MODE="${{ inputs.sanitiser_mode }}"
+            -D RTA_SANITISER_MODE="${{ inputs.sanitiser_mode }}" \
+            "${CMAKE_EXTRA[@]}"
           
       - name: Build
         # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
@@ -165,8 +168,10 @@ jobs:
         if: inputs.test_install == 'ON'
         shell: bash
         run: |
+          CMAKE_EXTRA=()
           if [[ "${{ inputs.vfxyear }}" -gt 2022 ]]; then
             export CMAKE_PREFIX_PATH="/usr/local${CMAKE_PREFIX_PATH:+:${CMAKE_PREFIX_PATH}}"
+            CMAKE_EXTRA+=( -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH )
           fi
           cmake \
             -B build_config_test \
@@ -174,7 +179,8 @@ jobs:
             -D RAWTOACES_DIR=${{ github.workspace }}/install/lib/cmake/RAWTOACES \
             -D CMAKE_TOOLCHAIN_FILE="${{ inputs.toolchain_file }}" \
             -D CMAKE_CXX_STANDARD=${{ inputs.cxx_standard }} \
-            -D CMAKE_BUILD_TYPE=${{ inputs.build_type }}
+            -D CMAKE_BUILD_TYPE=${{ inputs.build_type }} \
+            "${CMAKE_EXTRA[@]}"
 
       - name: Build config_tests
         if: inputs.test_install == 'ON'
