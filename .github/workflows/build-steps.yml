@@ -101,19 +101,21 @@ jobs:
             vcpkg-binary-cache-${{ runner.os }}-
             
       - name: Dependencies
-        if: inputs.vfxyear < 2024
+        if: inputs.vfxyear < 2023
         shell: bash
         run: |
           bash build_scripts/${{ inputs.install_deps }}.bash
               
       - name: Dependencies (aswf/ci-rawtoaces)
-        if: inputs.vfxyear > 2023
+        if: inputs.vfxyear > 2022
         shell: bash
         run: |
           conan profile detect --force
-          conan install --requires=nlohmann_json/3.12.0 --requires=nanobind/2.9.2 --generator CMakeDeps --generator CMakeToolchain --output-folder=build_deps --build=missing
+#          conan install --requires=nlohmann_json/3.12.0 --generator CMakeDeps --generator CMakeToolchain --output-folder=build_deps --build=missing
+#          conan install --requires=nanobind/2.9.2 --generator CMakeDeps --generator CMakeToolchain --output-folder=build_deps --build=missing
           python -m pip install pytest
-          sudo yum install --setopt=tsflags=nodocs -y perl-Image-ExifTool lensfun-devel
+#          sudo yum install --setopt=tsflags=nodocs -y perl-Image-ExifTool
+#          sudo yum install --setopt=tsflags=nodocs -y lensfun-devel
     
       - name: Configure CMake
         run: >
