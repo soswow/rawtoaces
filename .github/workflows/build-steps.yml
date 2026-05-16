@@ -116,23 +116,32 @@ jobs:
           # detect_api often sets compiler.cppstd=gnu14 for clang on ASWF images; nanobind/OIIO need ≥17 — align with matrix CMAKE_CXX_STANDARD.
           conan install --requires=nlohmann_json/3.12.0 -s compiler.cppstd=gnu${{ inputs.cxx_standard }} --generator CMakeDeps --generator CMakeToolchain --output-folder=build_deps --build=missing
           conan install --requires=nanobind/2.9.2 -s compiler.cppstd=gnu${{ inputs.cxx_standard }} --generator CMakeDeps --generator CMakeToolchain --output-folder=build_deps --build=missing
-          # configure.cmake runs "${Python_EXECUTABLE} -m nanobind"; FindPython may pick /usr/bin/python3.11 while `python` on PATH is elsewhere — pip every candidate, then fail fast before the heavy OpenImageIO Conan build.
-          for _py in /usr/local/bin/python3.11 /usr/bin/python3.11 "$(command -v python3.11 || true)" "$(command -v python3 || true)"; do
-            if [[ -n "$_py" && -x "$_py" ]]; then
-              "$_py" -m pip install pytest "nanobind==2.9.2"
+          # configure.cmake runs "${Python_EXECUTABLE} -m nanobind". Install into known ASWF Pythons; avoid bare `python3` (can be a broken shim under -e).
+          unset PYTHONHOME PYTHONPATH || true
+          _pys=(/usr/local/bin/python3.13 /usr/local/bin/python3.12 /usr/local/bin/python3.11 /usr/bin/python3.13 /usr/bin/python3.12 /usr/bin/python3.11)
+          for _py in "${_pys[@]}"; do
+            if [[ -x "$_py" ]]; then
+              "$_py" -m pip install pytest "nanobind==2.9.2" || true
             fi
           done
           _ok=0
-          for _py in /usr/local/bin/python3.11 /usr/bin/python3.11 "$(command -v python3.11 || true)"; do
-            if [[ -n "$_py" && -x "$_py" ]] && "$_py" -c "import nanobind" 2>/dev/null; then
+          _chosen=""
+          for _py in "${_pys[@]}"; do
+            if [[ ! -x "$_py" ]]; then
+              continue
+            fi
+            if "$_py" -c "import nanobind" 2>/dev/null; then
               echo "nanobind import OK: $_py"
               _ok=1
+              _chosen="$_py"
+              break
             fi
           done
           if [[ "$_ok" -ne 1 ]]; then
-            echo "::error::No candidate python3.11 can import nanobind after pip install."
+            echo "::error::nanobind is not importable from any ASWF python3.11+ candidate."
             exit 1
           fi
+          echo "RAWTOACES_PYTHON_EXECUTABLE=${_chosen}" >> "${GITHUB_ENV}"
           # ASWF /usr/local may not ship OpenImageIOConfig.cmake; pull OIIO via Conan so find_package(CONFIG) succeeds with the merged toolchain.
           # - libheif needs C++20 vs conan's gnu17 profile → disable HEIF.
           # - default ffmpeg pulls vaapi/system which demands libva-devel while package_manager mode is "check" → disable ffmpeg for CI.
@@ -150,6 +159,10 @@ jobs:
             export CMAKE_PREFIX_PATH="/usr/local${CMAKE_PREFIX_PATH:+:${CMAKE_PREFIX_PATH}}"
             CMAKE_EXTRA+=( -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH )
           fi
+          PY_EXTRA=()
+          if [[ -n "${RAWTOACES_PYTHON_EXECUTABLE:-}" ]]; then
+            PY_EXTRA+=( -D "Python_EXECUTABLE=${RAWTOACES_PYTHON_EXECUTABLE}" )
+          fi
           cmake \
             -B build \
             -S . \
@@ -161,7 +174,8 @@ jobs:
             -D ENABLE_SHARED="${{ inputs.build_shared_libs }}" \
             -D RTA_ENABLE_LENSFUN="${{ inputs.enable_lensfun }}" \
             -D RTA_SANITISER_MODE="${{ inputs.sanitiser_mode }}" \
-            "${CMAKE_EXTRA[@]}"
+            "${CMAKE_EXTRA[@]}" \
+            "${PY_EXTRA[@]}"
           
       - name: Build
         # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
@@ -196,6 +210,10 @@ jobs:
             export CMAKE_PREFIX_PATH="/usr/local${CMAKE_PREFIX_PATH:+:${CMAKE_PREFIX_PATH}}"
             CMAKE_EXTRA+=( -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH )
           fi
+          PY_EXTRA=()
+          if [[ -n "${RAWTOACES_PYTHON_EXECUTABLE:-}" ]]; then
+            PY_EXTRA+=( -D "Python_EXECUTABLE=${RAWTOACES_PYTHON_EXECUTABLE}" )
+          fi
           cmake \
             -B build_config_test \
             -S ./tests/config_tests \
@@ -203,7 +221,8 @@ jobs:
             -D CMAKE_TOOLCHAIN_FILE="${{ inputs.toolchain_file }}" \
             -D CMAKE_CXX_STANDARD=${{ inputs.cxx_standard }} \
             -D CMAKE_BUILD_TYPE=${{ inputs.build_type }} \
-            "${CMAKE_EXTRA[@]}"
+            "${CMAKE_EXTRA[@]}" \
+            "${PY_EXTRA[@]}"
 
       - name: Build config_tests
         if: inputs.test_install == 'ON'
