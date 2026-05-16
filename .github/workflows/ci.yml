@@ -22,6 +22,7 @@ jobs:
       cxx_compiler: ${{ matrix.cxx_compiler[1] }}
       cxx_standard: ${{ matrix.cxx_standard || 17 }}
       vfxyear: ${{ matrix.vfxyear || 0 }}
+      install_deps: install_deps_yum
       ceres_hack: ${{ matrix.ceres_hack || 'OFF' }}
       test_install: ${{ matrix.test_install || 'ON' }}
       toolchain_file: ${{ matrix.toolchain_file }}
