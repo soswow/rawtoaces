@@ -102,7 +102,21 @@ breathe_default_members = ('members', 'undoc-members')
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
+    'openimageio': ('https://openimageio.readthedocs.io/en/stable', None),
 }
+
+# These namespace/helper names and qualified Python classes are absent from
+# OpenImageIO's inventory. Keep exceptions exact so new missing APIs still fail.
+nitpick_ignore = [
+    ('cpp:identifier', 'OIIO'),
+    ('cpp:identifier', 'OIIO::ImageBuf'),
+    ('cpp:identifier', 'OIIO::ParamValueList'),
+    ('cpp:identifier', 'OIIO::ArgParse'),
+    ('py:class', 'OpenImageIO.ImageBuf'),
+    ('py:class', 'OpenImageIO.ImageSpec'),
+    ('py:class', 'OpenImageIO.ParamValueList'),
+    ('py:class', 'OpenImageIO.TypeDesc'),
+]
 
 # -- MyST Parser configuration -----------------------------------------------
 # https://myst-parser.readthedocs.io/en/latest/
@@ -111,3 +125,6 @@ myst_enable_extensions = [
     'colon_fence',
     'deflist',
 ]
+
+# Match GitHub heading fragments in the included contribution guide.
+myst_heading_anchors = 3
