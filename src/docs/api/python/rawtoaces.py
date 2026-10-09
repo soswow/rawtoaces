@@ -2,6 +2,14 @@
 # Edit src/bindings/*.cpp docstrings, rebuild and regenerate; do not edit prose here.
 # Forward annotations, enum aliases and public OpenImageIO names are normalized.
 
+"""
+Python bindings for RAW image conversion and metadata/spectral solving.
+
+Methods accepting OpenImageIO objects require a compatible OpenImageIO
+3.2+ build. Those methods are absent from earlier builds; see
+:ref:`python-oiio-availability` for the capability table.
+"""
+
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -128,7 +136,17 @@ class TransformSolver:
         Calculate the transform matrix. The solved matrix can be accessed via
         ``transform_matrix``.
 
-        :return: ``True`` if calculated successfully.
+        Call this method on :py:class:`rawtoaces.MetadataSolver` or
+        :py:class:`rawtoaces.SpectralSolver`; the base class cannot be
+        constructed directly in Python. The derived solver's inputs must be
+        configured before solving. For spectral solving, calculate white
+        balance first with :py:meth:`rawtoaces.SpectralSolver.calculate_WB`
+        or the multiplier form of
+        :py:meth:`rawtoaces.SpectralSolver.find_illuminant`.
+
+        :return: ``True`` if calculated successfully, ``False`` otherwise.
+            Inspect ``last_error_message`` on failure. Read
+            ``transform_matrix`` only after a successful solve.
         """
 
     @property
@@ -158,7 +176,12 @@ class TransformSolver:
     def verbosity(self, arg: int, /) -> None: ...
 
 class MetadataSolver(TransformSolver):
-    """Solve an input transform using the metadata stored in DNG files."""
+    """
+    Solve an input transform using the metadata stored in DNG files.
+
+    ``calculate_transform``, ``transform_matrix``, ``last_error_message``, and
+    ``verbosity`` are inherited from :py:class:`rawtoaces.TransformSolver`.
+    """
 
     def __init__(self, metadata: Metadata) -> None:
         """Default constructor."""
@@ -206,6 +229,9 @@ class MetadataSolver(TransformSolver):
 class SpectralSolver(TransformSolver):
     """
     Solve an input transform using spectral sensitivity curves of a camera.
+
+    ``calculate_transform``, ``transform_matrix``, ``last_error_message``, and
+    ``verbosity`` are inherited from :py:class:`rawtoaces.TransformSolver`.
     """
 
     def __init__(self, search_directories: Sequence[str] = []) -> None:
@@ -252,31 +278,35 @@ class SpectralSolver(TransformSolver):
     @overload
     def find_illuminant(self, type: str) -> bool:
         """
-        Find spectral power distribution data of an illuminant of the given
-        type. This function can handle both built-in illuminant types (e.g.,
-        ``d55``, ``3200k``) and custom illuminants stored in the database. For
-        built-in types, it generates the spectral data using standard formulas.
+        Load an illuminant by its non-empty standard or database name.
 
-        :param type: illuminant type. Can be one of the built-in types, e.g.
-           ``d55``, ``3200k``, or a custom illuminant stored in the  database.
-        :type type: str
+        Generates daylight spectra such as ``"d55"`` and blackbody spectra such as
+        ``"3200k"``; other names are searched in the configured spectral database
+        paths. Camera data is not required for this form. This overload loads the
+        illuminant but does not calculate white balance; call ``calculate_WB()``
+        after loading the camera.
 
-        :return: ``True`` if loaded successfully, ``False`` otherwise
+        :param type: Non-empty standard or database illuminant name.
+        :return: ``True`` on success, ``False`` on failure. A failed database lookup
+            may leave ``last_error_message`` empty or unchanged.
+        :raises ValueError: If ``type`` is empty.
         """
 
     @overload
     def find_illuminant(self, wb_multipliers: Sequence[float]) -> bool:
         """
-        Find the illuminant best matching the given white-balancing multipliers.
-        This function analyzes all available illuminants and selects the one
-        that best matches the white balance coefficients. It uses Sum of Squared
-        Errors (SSE) to find the optimal match and automatically scales the
-        white balance multipliers.
+        Choose the illuminant best matching three white-balance multipliers.
 
-        :param wb_multipliers: white-balancing multipliers to match
-        :type wb_multipliers: list[float]
+        Requires camera data with three channels (R, G, B) to be loaded first.
+        Searches generated daylight/blackbody spectra and database illuminants.
+        On success this overload also calculates white-balance multipliers, available
+        from ``get_WB_multipliers()``.
 
-        :return: ``True`` if loaded successfully, ``False`` otherwise
+        :param wb_multipliers: Exactly three white-balance multipliers, [R, G, B].
+        :return: ``True`` on success, ``False`` on failure. State-validation failures
+            populate ``last_error_message``; a failed database lookup may leave it
+            empty or unchanged.
+        :raises ValueError: If ``wb_multipliers`` does not contain exactly three values.
         """
 
     def calculate_WB(self) -> bool:
@@ -374,6 +404,10 @@ class SpectralSolver(TransformSolver):
         :return: ``True`` if calculated successfully, ``False`` otherwise
         :pre: camera, illuminant, observer, and training_data must be properly
             loaded
+
+        .. deprecated:: 2.2.0
+           Will be removed in v3. Use ``calculate_transform()`` and read
+           ``transform_matrix`` after it returns ``True``.
         """
 
     def get_IDT_matrix(self) -> list[list[float]]:
@@ -388,6 +422,10 @@ class SpectralSolver(TransformSolver):
         :return: a 3×3 IDT transformation matrix
         :pre: ``calculate_transform()`` or deprecated ``calculate_IDT_matrix()``
             completed successfully
+
+        .. deprecated:: 2.2.0
+           Will be removed in v3. Read ``transform_matrix`` after a successful
+           ``calculate_transform()`` call.
         """
 
 def collect_image_files(path: Sequence[str]) -> list[list[str]]:
@@ -494,32 +532,30 @@ class ImageConverter:
     @overload
     def configure(self, input_filename: str) -> bool:
         """
-        Configures the converter using the requested white balance and colour
-        matrix method, and the metadata of the file provided in
-        ``input_filename``.
+        Configure white balance, the colour transform and decoding options from a file.
 
-        This method loads the metadata from the given image file and
-        initialises the options to give the OIIO raw image reader to
-        decode the pixels.
+        Uses the current ``settings`` and reads metadata from ``input_filename``.
+        This overload is available in every Python build and does not expose the
+        OpenImageIO decoding options to Python.
 
-        :param input_filename: A file name of the raw image file to read the
-            metadata from.
-        :type input_filename: str
-        :return: ``True`` if configured successfully.
+        :param input_filename: Path to the RAW image whose metadata will be read.
+        :return: ``True`` on success, ``False`` on failure. On failure, inspect
+            ``last_error_message`` and ``status``.
         """
 
     @overload
     def configure(self, image_spec: OpenImageIO.ImageSpec, options: OpenImageIO.ParamValueList) -> bool:
         """
-        Configure the converter from an OpenImageIO ImageSpec.
+        Configure white balance, the colour transform and decoding options from metadata.
 
-        :param image_spec: Image specification.
-        :type image_spec: OpenImageIO.ImageSpec
+        Uses the current ``settings`` and fills or modifies ``options`` in place with
+        OpenImageIO decoding hints. Requires compatible OpenImageIO 3.2+ bindings;
+        see :ref:`python-oiio-availability`.
 
-        :param options: OIIO input options. This object may be modified.
-        :type options: OpenImageIO.ParamValueList
-
-        :return: ``True`` if configured successfully.
+        :param image_spec: Image specification containing the source metadata.
+        :param options: OpenImageIO input options; this object may be modified.
+        :return: ``True`` on success, ``False`` on failure. On failure, inspect
+            ``last_error_message`` and ``status``.
         """
 
     def get_supported_formats(self) -> list[str]:
@@ -548,6 +584,9 @@ class ImageConverter:
         """
         Apply the lens correction to the image buffer.
 
+        Available only with compatible OpenImageIO 3.2+ bindings; see
+        :ref:`python-oiio-availability`.
+
         :param dst: Destination image buffer
         :type dst: OpenImageIO.ImageBuf
 
@@ -562,6 +601,9 @@ class ImageConverter:
         Apply the colour space conversion matrix (or matrices) to convert the image buffer from the raw
         camera colour space to ACES.
 
+        Available only with compatible OpenImageIO 3.2+ bindings; see
+        :ref:`python-oiio-availability`.
+
         :param dst: Destination image buffer.
         :type dst: OpenImageIO.ImageBuf
 
@@ -573,7 +615,10 @@ class ImageConverter:
 
     def apply_scale(self, dst: OpenImageIO.ImageBuf, src: OpenImageIO.ImageBuf) -> bool:
         """
-        Apply the headroom scale to image buffer.
+        Multiply image buffer pixel values by ``settings.headroom * settings.scale``.
+
+        Available only with compatible OpenImageIO 3.2+ bindings; see
+        :ref:`python-oiio-availability`.
 
         :param dst: Destination image buffer
         :type dst: OpenImageIO.ImageBuf
@@ -587,6 +632,9 @@ class ImageConverter:
     def apply_crop(self, dst: OpenImageIO.ImageBuf, src: OpenImageIO.ImageBuf) -> bool:
         """
         Apply the cropping mode as specified in crop_mode.
+
+        Available only with compatible OpenImageIO 3.2+ bindings; see
+        :ref:`python-oiio-availability`.
 
         :param dst: Destination image buffer.
         :type dst: OpenImageIO.ImageBuf
@@ -603,6 +651,9 @@ class ImageConverter:
         calculated by the ``configure`` method. The hints can be manually modified
         prior to invoking this method.
 
+        Available only with compatible OpenImageIO 3.2+ bindings; see
+        :ref:`python-oiio-availability`.
+
         :param path: Path to where the image from.
         :type path: str
 
@@ -612,7 +663,8 @@ class ImageConverter:
         :param buffer: Destination buffer where the image loaded into.
         :type buffer: OpenImageIO.ImageBuf
 
-        :param data_type: Data type of the samples in the destination buffer.
+        :param data_type: Sample type in the destination buffer (default:
+            ``OpenImageIO.FLOAT``).
         :type data_type: OpenImageIO.TypeDesc
 
         :return: ``True`` if image load successfully.
@@ -622,13 +674,17 @@ class ImageConverter:
         """
         Save an image into an ACES container.
 
+        Available only with compatible OpenImageIO 3.2+ bindings; see
+        :ref:`python-oiio-availability`.
+
         :param output_filename: Full path to the output file.
         :type output_filename: str
 
         :param buf: Image buffer to save.
         :type buf: OpenImageIO.ImageBuf
 
-        :param data_type: Data type of the samples to be written out.
+        :param data_type: Sample type written to the file (default:
+            ``OpenImageIO.HALF``).
         :type data_type: OpenImageIO.TypeDesc
 
         :return: ``True`` if saved successfully.
@@ -684,7 +740,11 @@ class ImageConverter:
 
         @property
         def headroom(self) -> float:
-            """Highlight headroom factor."""
+            """
+            Linear highlight headroom factor. The default is 6.0.
+            Pixel scaling uses ``headroom * scale``; changing headroom from 6 to 12
+            doubles that multiplier.
+            """
 
         @headroom.setter
         def headroom(self, arg: float, /) -> None: ...
